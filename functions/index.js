@@ -66,3 +66,27 @@ exports.updateInstanceToken = functions.region('europe-west1').https.onCall(asyn
         .add({username: data.username, token: data.token});
     return undefined;
 });
+
+exports.sendMessage = functions.region('europe-west1').https.onCall(async (data, context) => {
+    let recvToken;
+    console.log('----------------');
+    console.log(data);
+    console.log('----------------');
+    const doc = await admin.firestore().collection('instance_tokens').where('username', '==', data.receiver)
+        .get();
+    doc.forEach(dd => recvToken = dd.data().token);
+    const message = {
+        notification: {
+            title: data.senderNickname,
+            body: 'You have a new message!'
+        },
+        data: {
+            sender: data.sender,
+            senderNickname: data.senderNickname,
+            body: data.body,
+            sendTime: '' + Date.now()
+        },
+        token: recvToken
+    }
+    return admin.messaging().send(message);
+});
